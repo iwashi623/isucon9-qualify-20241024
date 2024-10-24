@@ -268,6 +268,9 @@ type resSetting struct {
 	Categories        []Category `json:"categories"`
 }
 
+var categories = []Category{}
+var categoryCache = map[int]Category{}
+
 func init() {
 	store = sessions.NewCookieStore([]byte("abc"))
 
@@ -320,6 +323,17 @@ func main() {
 	defer dbx.Close()
 
 	mux := goji.NewMux()
+
+	err = dbx.Select(&categories, "SELECT * FROM `categories`")
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	categoryCache = make(map[int]Category, len(categories))
+	for _, c := range categories {
+		categories[c.ID] = c
+	}
 
 	// API
 	mux.HandleFunc(pat.Post("/initialize"), postInitialize)
@@ -408,7 +422,7 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err
 }
 
 func getCategoryByID(q sqlx.Queryer, categoryID int) (category Category, err error) {
-	err = sqlx.Get(q, &category, "SELECT * FROM `categories` WHERE `id` = ?", categoryID)
+	category = categoryCache[categoryID]
 	if category.ParentID != 0 {
 		parentCategory, err := getCategoryByID(q, category.ParentID)
 		if err != nil {
@@ -2150,14 +2164,6 @@ func getSettings(w http.ResponseWriter, r *http.Request) {
 
 	ress.PaymentServiceURL = getPaymentServiceURL()
 
-	categories := []Category{}
-
-	err := dbx.Select(&categories, "SELECT * FROM `categories`")
-	if err != nil {
-		log.Print(err)
-		outputErrorMsg(w, http.StatusInternalServerError, "db error")
-		return
-	}
 	ress.Categories = categories
 
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
