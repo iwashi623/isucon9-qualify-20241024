@@ -427,7 +427,12 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 
 func getSimpleUesrsByIDs(q sqlx.Queryer, userIDs []int64) (map[int64]UserSimple, error) {
 	users := []User{}
-	err := sqlx.Select(q, &users, "SELECT * FROM `users` WHERE `id` IN (?)", userIDs)
+	query, args, err := sqlx.In("SELECT * FROM `users` WHERE `id` IN (?)", userIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	err = sqlx.Select(q, &users, query, args...)
 	if err != nil {
 		return nil, err
 	}
