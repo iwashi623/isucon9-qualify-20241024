@@ -99,7 +99,7 @@ type Item struct {
 	CreatedAt   time.Time `json:"-" db:"created_at"`
 	UpdatedAt   time.Time `json:"-" db:"updated_at"`
 
-	User User `json:"-" db:"user"`
+	User User `json:"user" db:"user"`
 }
 
 type ItemSimple struct {
@@ -1392,10 +1392,18 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 
 	targetItem := Item{}
 	err = tx.Get(&targetItem,
-		`SELECT u.* FROM items i
-		JOIN users u ON i.seller_id = u.id
-		WHERE i.id = ?
-		FOR UPDATE`,
+		`SELECT i.*, 
+	            u.id AS "user.id", 
+	            u.account_name AS "user.account_name", 
+	            u.hashed_password AS "user.hashed_password", 
+	            u.address AS "user.address", 
+	            u.num_sell_items AS "user.num_sell_items", 
+	            u.last_bump AS "user.last_bump", 
+	            u.created_at AS "user.created_at"
+		 FROM items i
+		 JOIN users u ON i.seller_id = u.id
+		 WHERE i.id = ?
+		 FOR UPDATE`,
 		rb.ItemID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "item not found")
