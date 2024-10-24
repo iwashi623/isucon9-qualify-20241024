@@ -1422,21 +1422,6 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	seller := User{}
-	err = tx.Get(&seller, "SELECT * FROM `users` WHERE `id` = ? FOR UPDATE", targetItem.SellerID)
-	if err == sql.ErrNoRows {
-		outputErrorMsg(w, http.StatusNotFound, "seller not found")
-		tx.Rollback()
-		return
-	}
-	if err != nil {
-		log.Print(err)
-
-		outputErrorMsg(w, http.StatusInternalServerError, "db error")
-		tx.Rollback()
-		return
-	}
-
 	category, err := getCategoryByID(tx, targetItem.CategoryID)
 	if err != nil {
 		log.Print(err)
@@ -1491,8 +1476,8 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 	scr, err := APIShipmentCreate(getShipmentServiceURL(), &APIShipmentCreateReq{
 		ToAddress:   buyer.Address,
 		ToName:      buyer.AccountName,
-		FromAddress: seller.Address,
-		FromName:    seller.AccountName,
+		FromAddress: targetItem.User.Address,
+		FromName:    targetItem.User.AccountName,
 	})
 	if err != nil {
 		log.Print(err)
@@ -1543,8 +1528,8 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 		scr.ReserveTime,
 		buyer.Address,
 		buyer.AccountName,
-		seller.Address,
-		seller.AccountName,
+		targetItem.User.Address,
+		targetItem.User.AccountName,
 		"",
 	)
 	if err != nil {
