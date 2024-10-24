@@ -330,9 +330,9 @@ func main() {
 		return
 	}
 
-	categoryCache = make(map[int]Category)
+	categoryCache = make(map[int]Category, len(categories))
 	for _, c := range categories {
-		categories[c.ID] = c
+		categoryCache[c.ID] = c
 	}
 
 	// API
