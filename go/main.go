@@ -330,7 +330,7 @@ func main() {
 		return
 	}
 
-	categoryCache = make(map[int]Category, 100)
+	categoryCache = make(map[int]Category)
 	for _, c := range categories {
 		categories[c.ID] = c
 	}
